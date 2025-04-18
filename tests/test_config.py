@@ -51,10 +51,9 @@ def test_get_invalid_parameter(config: ConfigValidator):
 @pytest.mark.parametrize(
     "validator_func_name",
     [
-        "is_valid_ScanMemoryLimit",
-        "is_valid_PackageType",
-        "is_valid_ExecArgMax",
-        "is_valid_AdditionalDNSLookup",
+        "is_valid_CoreDumpsPath",
+        "is_valid_MachineId",
+        "is_valid_locale",
     ],
 )
 def test_parameter(
@@ -69,6 +68,54 @@ def test_parameter(
     ), f"[{validator_func_name}] Результат: {is_valid}, Ожидалось: {expected}. Детали: {msg}"
 
 
-"""
-pytest --cov=. --cov-report=html tests/
-"""
+@pytest.mark.parametrize(
+    "section, parameter, valid_values",
+    [
+        ("General", "AdditionalDNSLookup", ["true", "false", "yes", "no"]),
+        ("General", "CoreDumps", ["true", "false", "yes", "no"]),
+        ("General", "RevealSensitiveInfoInTraces", ["true", "false", "yes", "no"]),
+        ("General", "UseFanotify", ["true", "false", "yes", "no"]),
+        ("General", "KsvlaMode", ["true", "false", "yes", "no"]),
+        ("General", "StartupTraces", ["true", "false", "yes", "no"]),
+        ("General", "PackageType", ["rpm", "deb"]),
+    ],
+)
+def test_boolean_parameter(
+    config_with_expected: tuple[ConfigValidator, bool],
+    section: str,
+    parameter: str,
+    valid_values: list[str],
+):
+    """Проверяет, что параметр принимает true/false/yes/no в любом регистре."""
+    config, expected = config_with_expected
+    is_valid, msg = config.validate_enum(section, parameter, valid_values)
+    assert (
+        is_valid == expected
+    ), f"[{parameter}] Результат: {is_valid}, Ожидалось: {expected}. Детали: {msg}"
+
+
+@pytest.mark.parametrize(
+    "section, parameter, min_value, max_value",
+    [
+        ("General", "ScanMemoryLimit", 1024, 8192),
+        ("General", "ExecArgMax", 10, 100),
+        ("General", "ExecEnvMax", 10, 100),
+        ("General", "MaxInotifyWatches", 1000, 1000000),
+        ("General", "MaxInotifyInstances", 1024, 8192),
+    ],
+)
+def test_integer_range_parameters(
+    config_with_expected: tuple[ConfigValidator, bool],
+    section: str,
+    parameter: str,
+    min_value: int,
+    max_value: int,
+):
+    """Проверяет, что параметр является целым числом в заданном диапазоне."""
+    config, expected = config_with_expected
+    is_valid, msg = config.validate_int_in_range(
+        section, parameter, min_value, max_value
+    )
+    assert (
+        is_valid == expected
+    ), f"[{parameter}] Результат: {is_valid}, Ожидалось: {expected}. Детали: {msg}"

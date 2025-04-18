@@ -3,6 +3,7 @@
 import configparser
 import os
 import uuid
+import re
 from utils.utils import is_int
 
 
@@ -79,29 +80,46 @@ class ConfigValidator:
 
         return True, f"{parameter} корректно"
 
-    def is_valid_ScanMemoryLimit(self) -> tuple[bool, str]:
-        """Проверяет, что ScanMemoryLimit целое число в диапазоне [1024-8192]."""
-        return self.validate_int_in_range("General", "ScanMemoryLimit", 1024, 8192)
+    def is_valid_CoreDumpsPath(self) -> tuple[bool, str]:
+        """Проверяет, что CoreDumpsPath существует и является абсолютным путём."""
+        ok, value = self.safe_get("General", "CoreDumpsPath")
+        if not ok:
+            return False, f"Ошибка: {value}"
 
-    def is_valid_PackageType(self) -> tuple[bool, str]:
-        """Проверяет, что PackageType равен 'rpm' или 'deb' (регистр не учитывается)."""
-        return self.validate_enum("General", "PackageType", ["rpm", "deb"])
+        if not os.path.isabs(value):
+            return (
+                False,
+                f"CoreDumpsPath должен быть абсолютным путём, сейчас: '{value}'",
+            )
 
-    def is_valid_ExecArgMax(self) -> tuple[bool, str]:
-        """Проверяет, что ExecArgMax целое число в интервале [10-100]."""
-        return self.validate_int_in_range("General", "ExecArgMax", 10, 100)
+        if not os.path.isdir(value):
+            return (
+                False,
+                f"CoreDumpsPath не существует или не является директорией: '{value}'",
+            )
 
-    def is_valid_AdditionalDNSLookup(self) -> tuple[bool, str]:
-        """Проверяет, что AdditionalDNSLookup true/false/yes/no в любом регистре"""
-        return self.validate_enum(
-            "General", "AdditionalDNSLookup", ["true", "false", "yes", "no"]
-        )
+        return True, "CoreDumpsPath корректно"
 
-    # def is_valid_machine_id(self):
-    #     """Проверяет, что MachineId является корректным UUID."""
-    #     value = self.get("General", "MachineId").strip()
-    #     try:
-    #         uuid.UUID(value)
-    #         return True
-    #     except ValueError:
-    #         return False
+    def is_valid_MachineId(self) -> tuple[bool, str]:
+        """Проверяет, что MachineId является корректным UUID."""
+        ok, value = self.safe_get("General", "MachineId")
+        if not ok:
+            return False, f"Ошибка: {value}"
+
+        try:
+            uuid.UUID(value.strip())
+            return True, "MachineId корректно"
+        except ValueError:
+            return False, f"MachineId невалидный UUID: '{value}'"
+
+    def is_valid_locale(self) -> tuple[bool, str]:
+        """Проверяет, что Locale имеет корректный формат."""
+        ok, value = self.safe_get("General", "Locale")
+        if not ok:
+            return False, f"Ошибка: {value}"
+
+        pattern = r"^[a-zA-Z]{2}([-_][a-zA-Z]{2})?(\.UTF-8)?$"
+        if not re.fullmatch(pattern, value.strip()):
+            return False, f"Locale имеет неверный формат: '{value}'"
+
+        return True, "Locale корректно"
