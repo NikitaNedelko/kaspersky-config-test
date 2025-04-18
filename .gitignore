@@ -2,3 +2,5 @@ venv/
 .pytest_cache
 .coverage
 __pycache__/
+htmlcov
+pytest.ini
