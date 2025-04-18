@@ -4,7 +4,7 @@ import configparser
 import os
 import uuid
 import re
-from utils.utils import is_int
+from utils.utils import is_int, is_float
 
 
 class ConfigValidator:
@@ -123,3 +123,81 @@ class ConfigValidator:
             return False, f"Locale имеет неверный формат: '{value}'"
 
         return True, "Locale корректно"
+
+    def is_valid_ConnectTimeout(self) -> tuple[bool, str]:
+        """Проверяет, что ConnectTimeout — целое число [1-120] с 'm' в конце."""
+        ok, value = self.safe_get("Watchdog", "ConnectTimeout")
+        if not ok:
+            return False, f"Ошибка: {value}"
+
+        value = value.strip().lower()
+        if not value.endswith("m"):
+            return False, f"ConnectTimeout должен заканчиваться на 'm': '{value}'"
+
+        if not is_int(value[:-1]):
+            return (
+                False,
+                f"ConnectTimeout должно быть целым числом c 'm' в конце, сейчас: '{value}'",
+            )
+
+        value = int(value[:-1])
+
+        if not 1 <= value <= 120:
+            return (
+                False,
+                f"ConnectTimeout={value} вне допустимого диапазона [1-120]",
+            )
+
+        return True, f"ConnectTimeout корректно"
+
+    def is_valid_MaxVirtualMemory(self) -> tuple[bool, str]:
+        """Проверяет MaxVirtualMemory: off/auto или вещественное число (0, 100]."""
+        ok, value = self.safe_get("Watchdog", "MaxVirtualMemory")
+        if not ok:
+            return False, f"Ошибка: {value}"
+
+        value = value.strip().lower()
+        if value in {"off", "auto"}:
+            return True, "MaxVirtualMemory корректно"
+
+        if not is_float(value):
+            return (
+                False,
+                f"MaxVirtualMemory должно быть вещественным числом, сейчас: '{value}'",
+            )
+
+        value = float(value)
+
+        if not 0 < value <= 100:
+            return (
+                False,
+                f"MaxVirtualMemory={value} вне допустимого диапазона (0-100]",
+            )
+
+        return True, f"MaxVirtualMemory корректно"
+
+    def is_valid_MaxMemory(self) -> tuple[bool, str]:
+        """Проверяет MaxMemory: off/auto или вещественное число (0, 100]."""
+        ok, value = self.safe_get("Watchdog", "MaxMemory")
+        if not ok:
+            return False, f"Ошибка: {value}"
+
+        value = value.strip().lower()
+        if value in {"off", "auto"}:
+            return True, "MaxMemory корректно"
+
+        if not is_float(value):
+            return (
+                False,
+                f"MaxMemory должно быть вещественным числом, сейчас: '{value}'",
+            )
+
+        value = float(value)
+
+        if not 0 < value <= 100:
+            return (
+                False,
+                f"MaxMemory={value} вне допустимого диапазона (0-100]",
+            )
+
+        return True, f"MaxMemory корректно"

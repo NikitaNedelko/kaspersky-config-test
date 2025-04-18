@@ -54,6 +54,9 @@ def test_get_invalid_parameter(config: ConfigValidator):
         "is_valid_CoreDumpsPath",
         "is_valid_MachineId",
         "is_valid_locale",
+        "is_valid_ConnectTimeout",
+        "is_valid_MaxVirtualMemory",
+        "is_valid_MaxMemory",
     ],
 )
 def test_parameter(
@@ -102,6 +105,7 @@ def test_boolean_parameter(
         ("General", "ExecEnvMax", 10, 100),
         ("General", "MaxInotifyWatches", 1000, 1000000),
         ("General", "MaxInotifyInstances", 1024, 8192),
+        ("Watchdog", "PingInterval", 100, 10000),
     ],
 )
 def test_integer_range_parameters(
