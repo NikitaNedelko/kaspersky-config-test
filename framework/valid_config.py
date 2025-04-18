@@ -13,7 +13,7 @@ class ConfigValidator:
     def __init__(self, path: str):
         """Инициализация класса ConfigValidator."""
         if not os.path.exists(path):
-            raise FileNotFoundError(f"Configuration file not found: {path}")
+            raise FileNotFoundError(f"Конфигурационный файл не найден: {path}")
         self.config = configparser.ConfigParser()
         self.config.read(path)
 
@@ -36,29 +36,72 @@ class ConfigValidator:
         except ValueError as e:
             return False, str(e)
 
-    def is_valid_ScanMemoryLimit(self) -> tuple[bool, str]:
-        """Проверяет, что ScanMemoryLimit целое число в диапазоне 1024-8192."""
-        clear, value = self.safe_get("General", "ScanMemoryLimit")
-        if not clear:
+    def validate_int_in_range(
+        self, section: str, parameter: str, min_value: int, max_value: int
+    ) -> tuple[bool, str]:
+        """
+        Проверяет, что параметр существует, его значение — целое число,
+        и оно лежит в заданном диапазоне [min_value, max_value].
+        """
+        ok, value = self.safe_get(section, parameter)
+        if not ok:
             return False, f"Ошибка: {value}"
+
         if not is_int(value):
-            return False, f"ScanMemoryLimit должно быть целым числом, сейчас: '{value}'"
-        if not (1024 <= int(value) <= 8192):
-            return False, f"ScanMemoryLimit={value} вне диапазона (1024-8192)"
-        return True, "ScanMemoryLimit корректно"
+            return False, f"{parameter} должно быть целым числом, сейчас: '{value}'"
 
-    def is_valid_PackageType(self):
-        """Проверяет, что PackageType равен 'rpm' или 'deb' (регистр не учитывается)."""
-        clear, value = self.safe_get("General", "PackageType")
-        if not clear:
+        value = int(value)
+
+        if not min_value <= value <= max_value:
+            return (
+                False,
+                f"{parameter}={value} вне допустимого диапазона [{min_value}-{max_value}]",
+            )
+
+        return True, f"{parameter} корректно"
+
+    def validate_enum(
+        self, section: str, parameter: str, valid_values: list[str]
+    ) -> tuple[bool, str]:
+        """
+        Проверяет, что параметр существует
+        и его значение входит в список допустимых значений (без учёта регистра).
+        """
+        ok, value = self.safe_get(section, parameter)
+        if not ok:
             return False, f"Ошибка: {value}"
-        return value.lower() in ("rpm", "deb")
 
-    def is_valid_machine_id(self):
-        """Проверяет, что MachineId является корректным UUID."""
-        value = self.get("General", "MachineId").strip()
-        try:
-            uuid.UUID(value)
-            return True
-        except ValueError:
-            return False
+        if value.lower() not in [v.lower() for v in valid_values]:
+            return (
+                False,
+                f"{parameter} должно быть одним из {valid_values}, сейчас: '{value}'",
+            )
+
+        return True, f"{parameter} корректно"
+
+    def is_valid_ScanMemoryLimit(self) -> tuple[bool, str]:
+        """Проверяет, что ScanMemoryLimit целое число в диапазоне [1024-8192]."""
+        return self.validate_int_in_range("General", "ScanMemoryLimit", 1024, 8192)
+
+    def is_valid_PackageType(self) -> tuple[bool, str]:
+        """Проверяет, что PackageType равен 'rpm' или 'deb' (регистр не учитывается)."""
+        return self.validate_enum("General", "PackageType", ["rpm", "deb"])
+
+    def is_valid_ExecArgMax(self) -> tuple[bool, str]:
+        """Проверяет, что ExecArgMax целое число в интервале [10-100]."""
+        return self.validate_int_in_range("General", "ExecArgMax", 10, 100)
+
+    def is_valid_AdditionalDNSLookup(self) -> tuple[bool, str]:
+        """Проверяет, что AdditionalDNSLookup true/false/yes/no в любом регистре"""
+        return self.validate_enum(
+            "General", "AdditionalDNSLookup", ["true", "false", "yes", "no"]
+        )
+
+    # def is_valid_machine_id(self):
+    #     """Проверяет, что MachineId является корректным UUID."""
+    #     value = self.get("General", "MachineId").strip()
+    #     try:
+    #         uuid.UUID(value)
+    #         return True
+    #     except ValueError:
+    #         return False

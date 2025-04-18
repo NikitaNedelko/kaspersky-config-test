@@ -18,7 +18,8 @@ def config():
         ("example/out_of_range_config.ini", False),
         ("example/invalid_str_config.ini", False),
         ("example/invalid_int_or_float_config.ini", False),
-        ("example/empty_config.ini", False),
+        ("example/empty_values_config.ini", False),
+        ("example/no_parameters_config.ini", False),
     ]
 )
 def config_with_expected(request: pytest.FixtureRequest):
@@ -47,20 +48,25 @@ def test_get_invalid_parameter(config: ConfigValidator):
         config.get("General", "WrongParam")
 
 
-def test_ScanMemoryLimit(config_with_expected: tuple[ConfigValidator, bool]):
-    """Проверка корректности значения ScanMemoryLimit"""
+@pytest.mark.parametrize(
+    "validator_func_name",
+    [
+        "is_valid_ScanMemoryLimit",
+        "is_valid_PackageType",
+        "is_valid_ExecArgMax",
+        "is_valid_AdditionalDNSLookup",
+    ],
+)
+def test_parameter(
+    config_with_expected: tuple[ConfigValidator, bool], validator_func_name: str
+):
+    """Универсальный тест для проверки параметров через имя функции."""
     config, expected = config_with_expected
-    is_valid, msg = config.is_valid_ScanMemoryLimit()
+    validator_func = getattr(config, validator_func_name)
+    is_valid, msg = validator_func()
     assert (
         is_valid == expected
-    ), f"Результат: {is_valid}, Ожидалось: {expected}. Детали: {msg}"
-
-
-def test_PackageType(config_with_expected: tuple[ConfigValidator, bool]):
-    """Проверка корректности значения PackageType"""
-    config, expected = config_with_expected
-    is_valid = config.is_valid_PackageType()
-    assert is_valid == expected, f"Результат: {is_valid}, Ожидалось: {expected}"
+    ), f"[{validator_func_name}] Результат: {is_valid}, Ожидалось: {expected}. Детали: {msg}"
 
 
 """
