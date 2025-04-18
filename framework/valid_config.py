@@ -47,9 +47,11 @@ class ConfigValidator:
             return False, f"ScanMemoryLimit={value} вне диапазона (1024-8192)"
         return True, "ScanMemoryLimit корректно"
 
-    def is_valid_package_type(self):
+    def is_valid_PackageType(self):
         """Проверяет, что PackageType равен 'rpm' или 'deb' (регистр не учитывается)."""
-        value = self.get("General", "PackageType")
+        clear, value = self.safe_get("General", "PackageType")
+        if not clear:
+            return False, f"Ошибка: {value}"
         return value.lower() in ("rpm", "deb")
 
     def is_valid_machine_id(self):

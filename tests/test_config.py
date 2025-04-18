@@ -56,19 +56,12 @@ def test_ScanMemoryLimit(config_with_expected: tuple[ConfigValidator, bool]):
     ), f"Результат: {is_valid}, Ожидалось: {expected}. Детали: {msg}"
 
 
-# def test_
+def test_PackageType(config_with_expected: tuple[ConfigValidator, bool]):
+    """Проверка корректности значения PackageType"""
+    config, expected = config_with_expected
+    is_valid = config.is_valid_PackageType()
+    assert is_valid == expected, f"Результат: {is_valid}, Ожидалось: {expected}"
 
-# def test_package_type(config: ConfigValidator):
-#     """Проверка корректности значения PackageType"""
-#     assert config.is_valid_package_type(), "Ошибка: PackageType должен быть rpm или deb"
-
-
-# def test_machine_id(config: ConfigValidator):
-#     assert config.is_valid_machine_id(), "Ошибка: MachineId не является UUID"
-
-
-# def test_scan_memory_limit(config:ConfigValidator):
-#     assert config.is_valid_ScanMemoryLimit(), "Ошибка: ScanMemoryLimit вне допустимого диапазона"
 
 """
 pytest --cov=. --cov-report=html tests/
